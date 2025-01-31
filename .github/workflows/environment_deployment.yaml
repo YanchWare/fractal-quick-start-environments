@@ -1,0 +1,101 @@
+name: Environment Deployment
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.10.2
+
+      - name: Restore dependencies cache
+        uses: actions/cache@v4
+        id: cache-restore
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: environment-dependencies
+
+      - name: Build with Gradle
+        working-directory: environment/app
+        run: gradle clean test distTar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: environment-tar
+          path: environment/app/build/distributions/environment-app.tar
+
+      - name: Save dependencies cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: environment-dependencies
+
+  deploy-non-prod:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: environment-tar
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Deploy to Non Production
+        run: |
+          tar -xvf environment-app.tar
+          ./environment-app/bin/environment-app
+        env:
+          AZURE_SP_CLIENT_ID: ${{ secrets.AZURE_SP_CLIENT_ID }}
+          AZURE_SP_CLIENT_SECRET: ${{ secrets.AZURE_SP_CLIENT_SECRET }}
+          CI_CD_SERVICE_ACCOUNT_NAME: ${{ secrets.OWNER_CI_CD_SERVICE_ACCOUNT_NAME }}
+          CI_CD_SERVICE_ACCOUNT_SECRET: ${{ secrets.OWNER_CI_CD_SERVICE_ACCOUNT_SECRET }}
+          ENVIRONMENT: NON_PRODUCTION
+
+  deploy-production:
+    needs: deploy-non-prod
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: environment-tar
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Deploy to Staging
+        run: |
+          tar -xvf environment-app.tar
+          ./environment-app/bin/environment-app
+        env:
+          AZURE_SP_CLIENT_ID: ${{ secrets.AZURE_SP_CLIENT_ID }}
+          AZURE_SP_CLIENT_SECRET: ${{ secrets.AZURE_SP_CLIENT_SECRET }}
+          CI_CD_SERVICE_ACCOUNT_NAME: ${{ secrets.OWNER_CI_CD_SERVICE_ACCOUNT_NAME }}
+          CI_CD_SERVICE_ACCOUNT_SECRET: ${{ secrets.OWNER_CI_CD_SERVICE_ACCOUNT_SECRET }}
+          ENVIRONMENT: PRODUCTION
