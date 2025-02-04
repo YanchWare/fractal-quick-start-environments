@@ -31,7 +31,7 @@ jobs:
           key: environment-dependencies
 
       - name: Build with Gradle
-        working-directory: environment/app
+        working-directory: deploy/app
         run: gradle clean test distTar
 
       - name: Upload artifact
