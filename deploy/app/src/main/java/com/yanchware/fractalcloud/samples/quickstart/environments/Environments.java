@@ -16,12 +16,12 @@ public class Environments {
 
   public Environments() {
     production = getEnvironment(
-      "Fractal Bank Production",
+      "Fractal Production",
       PRODUCTION_MANAGEMENT_ENVIRONMENT_SHORT_NAME,
       FRACTAL_PRODUCTION_MANAGEMENT_RESOURCE_GROUP_ID,
       AZURE_PRODUCTION_MANAGEMENT_SUBSCRIPTION_ID);
     nonProduction = getEnvironment(
-      "Fractal Bank Non Production",
+      "Fractal Non Production",
       NON_PRODUCTION_ENVIRONMENT_SHORT_NAME,
       FRACTAL_NON_PRODUCTION_MANAGEMENT_RESOURCE_GROUP_ID,
       AZURE_NON_PRODUCTION_MANAGEMENT_SUBSCRIPTION_ID);
